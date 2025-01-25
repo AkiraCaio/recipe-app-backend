@@ -2,6 +2,7 @@ using RecipeAppBackend.Application.Interface;
 using RecipeAppBackend.Application.Services;
 using RecipeAppBackend.Application.Mapping;
 using RecipeAppBackend.Domain.Interfaces;
+using RecipeAppBackend.Domain.Entities;
 using RecipeAppBackend.Extensions;
 using RecipeAppBackend.Infrastructure.Repositories;
 
@@ -29,15 +30,21 @@ builder.Services
         options.SuppressAsyncSuffixInActionNames = false;
     });
 
-// Aqui é onde você injeta serviços e repositórios do Application/Infrastructure
-// e.g., builder.Services.AddScoped<IRecipesRepository, RecipesRepository>();
-//       builder.Services.AddScoped<IRecipesService, RecipesService>();
 builder.Services
     .AddScoped<IUserService, UserService>()
     .AddScoped<IUserRepository, UserRepository>()
-    .AddScoped<IAuthService, AuthService>();
-    
+    .AddScoped<IAuthService, AuthService>()
+    .AddScoped<IRoleRepository, RoleRepository>()
+    .AddScoped<IUserRoleRepository, UserRoleRepository>();
+
 var app = builder.Build();
+
+// Verifica e cria a role "User" se não existir
+using (var scope = app.Services.CreateScope())
+{
+    var roleRepository = scope.ServiceProvider.GetRequiredService<IRoleRepository>();
+    await EnsureUserRoleExists(roleRepository);
+}
 
 if (app.Environment.IsDevelopment())
 {
@@ -56,3 +63,18 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+async Task EnsureUserRoleExists(IRoleRepository roleRepository)
+{
+    var roleExists = await roleRepository.ExistsByNameAsync("User");
+    if (!roleExists)
+    {
+        var userRole = new Role
+        {
+            Name = "User",
+            Description = "Default role for new users",
+            CreatedAt = DateTime.UtcNow
+        };
+        await roleRepository.AddAsync(userRole);
+    }
+}

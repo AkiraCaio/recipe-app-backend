@@ -9,8 +9,8 @@ namespace RecipeAppBackend.Domain.Interfaces
         Task<User> GetByEmailAsync(string email);
         Task<IEnumerable<User>> GetAllAsync();
 
-        Task addAsync(User user);
-        Task updateAsync(User user);
+        Task AddAsync(User user);
+        Task UpdateAsync(User user);
         Task DeleteAsync(int id);
 
         Task<bool> ExistsAsync(int id);

@@ -16,5 +16,6 @@ namespace RecipeAppBackend.Application.Interface
         Task<bool> ExistsAsync(int id);
         Task<bool> ExistsByUsernameAsync(string username);
         Task<bool> ExistsByEmailAsync(string email);
+        Task<IEnumerable<string>> GetUserPermissionsAsync(int userId);
     }
 }
