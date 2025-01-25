@@ -1,4 +1,3 @@
-
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -15,7 +14,7 @@ namespace RecipeAppBackend.Application.Services
         private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
 
-       public AuthService(IUserRepository userRepository, IConfiguration configuration)
+        public AuthService(IUserRepository userRepository, IConfiguration configuration)
         {
             _userRepository = userRepository;
             _configuration = configuration;
@@ -30,18 +29,23 @@ namespace RecipeAppBackend.Application.Services
             }
 
             var tokenHandler = new JwtSecurityTokenHandler();
-
             var jwtSettings = _configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? throw new ArgumentException("JwtSettings section is missing in appsettings.json");
-
             var key = Encoding.UTF8.GetBytes(jwtSettings.SecretKey);
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim(ClaimTypes.Name, user.Username)
+            };
+
+            foreach (var userRole in user.UserRoles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, userRole.Role.Name));
+            }
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                    new Claim(ClaimTypes.Name, user.Username),
-                    new Claim(ClaimTypes.Role, user.Role.ToString()),
-                }),
+                Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddHours(1),
                 Issuer = jwtSettings.Issuer,
                 Audience = jwtSettings.Audience,

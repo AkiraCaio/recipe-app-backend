@@ -5,11 +5,16 @@ using RecipeAppBackend.Infrastructure.Data;
 
 namespace RecipeAppBackend.Infrastructure.Repositories
 {
-    public class UserRepository(AppDbContext context) : IUserRepository
+    public class UserRepository : IUserRepository
     {
-        private readonly AppDbContext _context = context;
+        private readonly AppDbContext _context;
 
-        public async Task addAsync(User user)
+        public UserRepository(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task AddAsync(User user)
         {
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
@@ -27,7 +32,7 @@ namespace RecipeAppBackend.Infrastructure.Repositories
 
         public Task<bool> ExistsAsync(int id)
         {
-            return _context.Users.AnyAsync(u => u.Id == id);
+            return _context.Users.AnyAsync(u => u.UserId == id);
         }
 
         public Task<bool> ExistsByEmailAsync(string email)
@@ -52,15 +57,21 @@ namespace RecipeAppBackend.Infrastructure.Repositories
 
         public async Task<User> GetByIdAsync(int id)
         {
-            return await _context.Users.FindAsync(id);
+            return await _context.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .SingleOrDefaultAsync(u => u.UserId == id);
         }
 
         public async Task<User> GetByUsernameAsync(string username)
         {
-            return await _context.Users.SingleOrDefaultAsync(u => u.Username == username);
+            return await _context.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .SingleOrDefaultAsync(u => u.Username == username);
         }
 
-        public async Task updateAsync(User user)
+        public async Task UpdateAsync(User user)
         {
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
